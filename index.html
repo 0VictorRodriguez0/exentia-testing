@@ -7034,7 +7034,7 @@ try {
   <div class="mobile-drawer-contact">
     <a href="tel:+529984803595">998 480 3595</a>
     <span>Av. Huayacán, Plaza Hive, Cancún</span>
-    <span>Lun-Sáb 10AM-6PM</span>
+    <span>Lun-Sáb 9AM-6PM</span>
   </div>
   <button type="button" class="mobile-drawer-cta" onclick="closeMobileDrawer(); smartAgendar();">Agendar Cita</button>
 </aside>
@@ -7330,8 +7330,8 @@ try {
                 <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <div>
-                <h4>Expertas Certificadas</h4>
-                <p>Profesionales apasionadas por tu bienestar</p>
+                <h4>Expertos Certificados</h4>
+                <p>Profesionales comprometidos con tu bienestar</p>
               </div>
             </div>
             <div class="filosofia-feature">
@@ -7340,7 +7340,7 @@ try {
               </div>
               <div>
                 <h4>Horario Flexible</h4>
-                <p>Lun-Sáb 10AM - 6PM, reservas online</p>
+                <p>Lun-Sáb 9AM - 6PM, reservas online</p>
               </div>
             </div>
           </div>
@@ -7549,7 +7549,7 @@ try {
           <li>Av. Huayacán</li>
           <li>Plaza Hive</li>
           <li>Cancún, Q. Roo</li>
-          <li>Lun-Sáb 10AM-6PM</li>
+          <li>Lun-Sáb 9AM-6PM</li>
         </ul>
       </div>
     </div>
@@ -7943,13 +7943,6 @@ try {
       <div id="mpf-google-map" class="mfa-google-map" aria-label="Mapa para fijar tu dirección"></div>
     </div>
 
-    <!-- Leyenda de zonas -->
-    <div class="mfa-zone-legend">
-      <span class="mfa-zone-dot" style="background:#3fa34d;"></span><span>Zona 1 · Centro · $250</span>
-      <span class="mfa-zone-dot" style="background:#d9a300;"></span><span>Zona 2 · Hotelera · $350</span>
-      <span class="mfa-zone-dot" style="background:#d9534f;"></span><span>Zona 3 · Lejana · $400</span>
-    </div>
-
     <!-- Feedback de zona detectada -->
     <div id="mpf-zone-feedback" class="mfa-zone-feedback" style="display:none;"></div>
 
@@ -8146,13 +8139,6 @@ try {
           <div class="cf-map-hint">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             <span>Tip: toca el mapa para mover el pin · arrástralo si necesitas ajustar · usa "Mi ubicación" si estás en tu casa</span>
-          </div>
-          <!-- Leyenda de zonas de cobertura a domicilio -->
-          <div class="cf-zone-legend" style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-top:6px;font-size:11.5px;color:#5c5c4a;">
-            <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:3px;background:#3fa34d;opacity:.55;border:1px solid #2e8b40;"></span>Zona 1 · Centro / Puerto Cancún · $250</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:3px;background:#d9a300;opacity:.55;border:1px solid #b8920a;"></span>Zona 2 · Z. Hotelera (km 0–12.5) · $350</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:3px;background:#d9534f;opacity:.55;border:1px solid #b5362a;"></span>Zona 3 · Z. Hotelera lejana / Aeropuerto · $400</span>
-            <span style="opacity:.8;">Fuera de estas zonas en Cancún: el equipo confirma el traslado.</span>
           </div>
           <!-- Resumen estilo Google Place card -->
           <div id="cf-address-summary" class="cf-address-summary" style="display:none;">
@@ -8354,7 +8340,7 @@ try {
       </div>
       <span class="logo">exentia</span>
       <span class="sub">SPA & BEAUTY SALON</span>
-      <h2>¡Listo, <em id="choice-firstname">linda</em>!</h2>
+      <h2>¡Listo<span id="choice-firstname-wrap" style="display:none">, <em id="choice-firstname"></em></span>!</h2>
       <p>Revisa tu reserva y confírmala por WhatsApp.</p>
     </div>
     <div class="modal-body">
@@ -8699,7 +8685,7 @@ try {
     </div>
     <div class="cf-header">
       <h2>Tu reserva quedó <em>registrada</em></h2>
-      <p class="cf-greeting">Gracias, <span id="cf-firstname">linda</span>.</p>
+      <p class="cf-greeting">Gracias<span id="cf-firstname-wrap" style="display:none">, <span id="cf-firstname-greet"></span></span>.</p>
     </div>
     <div class="cf-body">
       <p class="cf-lead">Recibimos los detalles de tu cita y los compartimos con nuestro equipo de terapeutas.</p>
@@ -11134,9 +11120,10 @@ try {
     function ring2path(r){ return r.map(function(p){ return { lat: p[0], lng: p[1] }; }); }
     var polys = [];
     function addPolys(rings, stroke, fill, z){
+      // Internos: NO se pintan en el mapa (uso interno para tarifa de traslado, nunca visibles al cliente)
       rings.forEach(function(r){
         polys.push(new google.maps.Polygon({
-          map: map, paths: ring2path(r), zIndex: z,
+          map: null, paths: ring2path(r), zIndex: z,
           strokeColor: stroke, strokeOpacity: 0.85, strokeWeight: 1.5,
           fillColor: fill, fillOpacity: 0.18, clickable: false
         }));
@@ -11220,7 +11207,7 @@ try {
     box.style.display = 'block';
     box.innerHTML = '<div style="display:flex;gap:8px;align-items:flex-start;background:#f4f6ec;border:1px solid ' + z.color + ';border-radius:10px;padding:10px 12px;">'
       + '<span style="width:12px;height:12px;border-radius:50%;background:' + z.color + ';margin-top:3px;flex:0 0 auto;"></span>'
-      + '<div style="font-size:12.5px;color:#3d3d2e;line-height:1.45;"><b>' + z.nombre + '</b><br>Traslado <b>$' + z.costo + '</b> por terapeuta · el total depende del número de terapeutas.</div>'
+      + '<div style="font-size:12.5px;color:#3d3d2e;line-height:1.45;">Traslado <b>$' + z.costo + '</b> por terapeuta · el total depende del número de terapeutas.</div>'
       + '</div>';
   }
   window.updateZoneFeedback = updateZoneFeedback;
@@ -12208,8 +12195,15 @@ try {
     // Después de capturar la dirección va al calendario propio.
     // El modal-choice se abre después como resumen final.
     var nameSpan = document.getElementById('choice-firstname');
+    var nameWrap = document.getElementById('choice-firstname-wrap');
     var d = window._formUserData || {};
-    if (nameSpan && d.firstName) nameSpan.textContent = d.firstName;
+    if (d.firstName) {
+      if (nameSpan) nameSpan.textContent = d.firstName;
+      if (nameWrap) nameWrap.style.display = '';
+    } else {
+      if (nameSpan) nameSpan.textContent = '';
+      if (nameWrap) nameWrap.style.display = 'none';
+    }
     closeModal('modal-address');
     setTimeout(function(){
       if (typeof openCal2 === 'function') openCal2();
@@ -12387,7 +12381,14 @@ try {
     try { if (window.exentiaTrack) window.exentiaTrack('form_submit_intent', { has_email: !!email, has_phone: !!phone, source: 'custom_form' }); } catch(e){}
 
     var nameSpan = document.getElementById('choice-firstname');
-    if (nameSpan) nameSpan.textContent = firstName;
+    var nameWrap = document.getElementById('choice-firstname-wrap');
+    if (firstName) {
+      if (nameSpan) nameSpan.textContent = firstName;
+      if (nameWrap) nameWrap.style.display = '';
+    } else {
+      if (nameSpan) nameSpan.textContent = '';
+      if (nameWrap) nameWrap.style.display = 'none';
+    }
 
     // Bifurcación según ubicación elegida:
     //  - Sucursal → modal-choice directo
@@ -13263,14 +13264,17 @@ try {
   }
 
   function _cal2GenSlots(durMin, dateIso) {
-    // Reglas Excel:
-    // - Spa Lun-Sáb 10:00-18:00 (último slot + duración ≤ 18:00).
-    // - Sucursal: sin restricción de anticipación, mismo día permitido.
-    // - Domicilio: mínimo 2h de anticipación al servicio principal → filtrar slots < ahora+2h.
-    // - Slots cada 60 minutos (10:00, 11:00, 12:00 ...).
-    var openH = 10, closeH = 18;
+    // Horarios independientes por modalidad (requerimiento Henry 2026-08-04):
+    // - Sucursal (spa): Lun-Sáb 9:00-18:00, último INICIO = cierre menos duración del servicio.
+    // - Domicilio (At Home): Lun-Sáb 7:00-20:00, último INICIO de servicio = 20:00 fijo
+    //   (no se resta la duración: el terapeuta se desplaza, no "cierra" nada a esa hora).
+    //   + mínimo 2h de anticipación al servicio principal → filtrar slots < ahora+2h.
+    // - Slots cada 60 minutos.
+    var isDomicilio = (typeof citaPlace !== 'undefined' && citaPlace && citaPlace.mode === 'domicilio');
+    var openH = isDomicilio ? 7 : 9;
+    var closeH = isDomicilio ? 20 : 18;
     var STEP = 60;
-    var lastStart = closeH * 60 - durMin;
+    var lastStart = isDomicilio ? (closeH * 60) : (closeH * 60 - durMin);
     var slots = [];
     var minStart = openH * 60;
     if (dateIso) {
@@ -13279,7 +13283,6 @@ try {
       if (d.getTime() === today.getTime()) {
         var now = new Date();
         var nowMin = now.getHours()*60 + now.getMinutes();
-        var isDomicilio = (typeof citaPlace !== 'undefined' && citaPlace && citaPlace.mode === 'domicilio');
         var earliest = isDomicilio ? (nowMin + 120) : nowMin;
         // Redondear hacia arriba al múltiplo de STEP
         earliest = Math.ceil(earliest / STEP) * STEP;
@@ -13532,8 +13535,15 @@ try {
 
   function showFinalConfirm() {
     var d = window._formUserData || {};
-    var first = document.getElementById('cf-firstname');
-    if (first) first.textContent = d.firstName || 'linda';
+    var first = document.getElementById('cf-firstname-greet');
+    var firstWrap = document.getElementById('cf-firstname-wrap');
+    if (d.firstName) {
+      if (first) first.textContent = d.firstName;
+      if (firstWrap) firstWrap.style.display = '';
+    } else {
+      if (first) first.textContent = '';
+      if (firstWrap) firstWrap.style.display = 'none';
+    }
     var waEl = document.getElementById('cf-meta-whatsapp');
     if (waEl) waEl.textContent = d.phone || '—';
     var fechaEl = document.getElementById('cf-meta-fecha');
@@ -14943,7 +14953,7 @@ try {
     setBtn(true);
     box.className = 'mfa-zone-feedback ok';
     box.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + z.color + ';margin-right:6px;vertical-align:middle;"></span>'
-      + '<b>' + z.nombre + '</b> · Traslado <b>$' + z.costo + '</b> por terapeuta. El total final depende de personas y modalidad.';
+      + 'Traslado <b>$' + z.costo + '</b> por terapeuta. El total final depende de personas y modalidad.';
   }
   window._mpfSetPin = _mpfSetPin;
 
@@ -15604,7 +15614,7 @@ try {
     var prof = _cuentaState.profile || {};
     var total = _cuentaState.bookings.length;
     var html = '<h2 class="ex-cuenta-h">Hola, <em>' + (prof.firstName || 'Cliente') + '</em></h2>';
-    html += '<p class="ex-cuenta-sub">Tienes ' + total + ' reserva' + (total === 1 ? '' : 's') + ' con nosotras.</p>';
+    html += '<p class="ex-cuenta-sub">Tienes ' + total + ' reserva' + (total === 1 ? '' : 's') + ' con Exentia.</p>';
     if (sp.upcoming.length > 0) {
       html += '<div class="ex-cuenta-block"><div class="ex-cuenta-block-h">TU PRÓXIMA CITA</div>' + _citaCard(sp.upcoming[0], 'card') + '</div>';
     }
@@ -17318,7 +17328,7 @@ try {
    el precio real.
 ═══════════════════════════════════════════════════════════════════ */
 (function(){
-
+  
   var DICT = {
     // ── Navbar / ribbon ──
     'Inicio': 'Home', 'Servicios': 'Services', 'Promociones': 'Promotions',
@@ -17353,8 +17363,8 @@ try {
     'Trabajamos con productos orgánicos y naturales porque creemos que lo que toca tu piel es tan importante como lo que sientes mientras te cuidan. Escuchamos primero, recomendamos después y adaptamos cada servicio a lo que tu cuerpo necesita hoy.': 'We work with organic, natural products because we believe what touches your skin is as important as what you feel while being cared for. We listen first, then recommend, and adapt every service to what your body needs today.',
     'Espacio Íntimo': 'Intimate Space', 'Ambiente privado para tu total relajación': 'A private setting for total relaxation',
     'Productos Orgánicos': 'Organic Products', 'Ingredientes naturales de alta calidad': 'High-quality natural ingredients',
-    'Expertas Certificadas': 'Certified Experts', 'Profesionales apasionadas por tu bienestar': 'Professionals passionate about your wellness',
-    'Horario Flexible': 'Flexible Hours', 'Lun-Sáb 10AM - 6PM, reservas online': 'Mon-Sat 10AM - 6PM, online booking',
+    'Expertos Certificados': 'Certified Experts', 'Profesionales comprometidos con tu bienestar': 'Professionals committed to your wellness',
+    'Horario Flexible': 'Flexible Hours', 'Lun-Sáb 9AM - 6PM, reservas online': 'Mon-Sat 9AM - 6PM, online booking',
     'Reserva tu Experiencia': 'Book your Experience', 'Agenda tu': 'Schedule your', 'cita': 'appointment',
     'Selecciona tus servicios favoritos y reserva en minutos.': 'Select your favorite services and book in minutes.',
     'Visítanos': 'Visit Us', 'Un rincón de': 'A corner of', 'paz': 'peace', 'en Cancún': 'in Cancún',
@@ -17381,7 +17391,7 @@ try {
     'Tu momento de paz te está esperando. Reserva hoy y descubre por qué somos el oasis favorito de Cancún.': 'Your moment of peace is waiting. Book today and discover why we are Cancún’s favorite oasis.',
     'Realzamos la belleza de tu esencia. Spa y salón de belleza con productos orgánicos y naturales en Cancún.': 'We enhance the beauty of your essence. Spa & beauty salon with organic, natural products in Cancún.',
     'Enlaces': 'Links', 'Contacto': 'Contact',
-    'Lun-Sáb 10AM-6PM': 'Mon-Sat 10AM-6PM',
+    'Lun-Sáb 9AM-6PM': 'Mon-Sat 9AM-6PM',
     '© 2026 EXENTIA SPA & BEAUTY SALON · TODOS LOS DERECHOS RESERVADOS': '© 2026 EXENTIA SPA & BEAUTY SALON · ALL RIGHTS RESERVED',
     // ── Flujo de reserva ──
     'Continuar': 'Continue', 'Confirmar': 'Confirm', 'Cambiar': 'Change',
@@ -17422,7 +17432,7 @@ try {
     'Fuera de estas zonas en Cancún: el equipo confirma el traslado.': 'Outside these Cancún zones: the team confirms the travel fee.',
     'Elige tu': 'Choose your', 'fecha y hora': 'date & time',
     'Selecciona el día y horario que mejor te acomode.': 'Select the day and time that suits you best.',
-    '¡Casi listo,': 'Almost there,', 'linda': 'dear',
+    '¡Casi listo,': 'Almost there,',
     'Revisa tu reserva y elige cómo cerrarla': 'Review your booking and choose how to finish it',
     'Tus servicios': 'Your services', '+ cambiar / agregar': '+ change / add',
     '¿Cómo prefieren recibir el servicio?': 'How would you like to receive the service?',
@@ -17865,7 +17875,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v216-total-con-traslado', stamp: '2026-07-31 16:09' };
+  var EX_BUILD = { version: 'v217-4prs-henry-horario-mapa-nombre-neutro', stamp: '2026-08-04 14:59' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
