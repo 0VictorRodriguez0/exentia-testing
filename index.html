@@ -7160,7 +7160,7 @@ try {
           <div class="sub">Naturalmente Tuyo</div>
         </div>
         <div class="value-item">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 22c4-4 8-7 8-13A8 8 0 0 0 4 9c0 6 4 9 8 13z"/><circle cx="12" cy="9" r="3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
           <div class="label">Organic</div>
           <div class="sub">Ingredientes Puros</div>
         </div>
@@ -8285,7 +8285,7 @@ try {
             <input class="auth-input" type="text" id="auth-reg-firstname" placeholder="Tu nombre" required style="margin-bottom:8px;">
             <input class="auth-input" type="text" id="auth-reg-lastname" placeholder="Apellido (opcional)" style="margin-bottom:8px;">
             <input class="auth-input" type="tel" id="auth-reg-phone" placeholder="998 123 4567" inputmode="tel" required>
-            <div class="ex-field-hint" id="auth-reg-phone-hint">Para que la asesora pueda confirmarte por WhatsApp.</div>
+            <div class="ex-field-hint" id="auth-reg-phone-hint">Para que el equipo pueda confirmarte por WhatsApp.</div>
             <button type="submit" class="auth-btn-primary" id="auth-reg-submit">Crear cuenta y enviar código →</button>
             <a class="auth-back-link" onclick="resetAuthToEmail()">← Cambiar correo</a>
           </form>
@@ -13715,7 +13715,7 @@ try {
       } else {
         // No tenemos la tarifa de zona todavía → indicamos que se calcula después
         trasladoText = '<div class="gs-total-row"><span>Traslado a domicilio</span><span style="color:#9a8d75; font-style:italic; font-weight:500;">por calcular</span></div>';
-        trasladoNote = '<div class="gs-total-note">El costo de traslado se confirma según la zona de tu domicilio. Una asesora te lo pasa por WhatsApp.</div>';
+        trasladoNote = '<div class="gs-total-note">El costo de traslado se confirma según la zona de tu domicilio. El equipo te lo pasa por WhatsApp.</div>';
       }
     }
     var total = grandTotal + traslado;
@@ -14471,7 +14471,7 @@ try {
       html += '<div class="ck-total-row grand"><span>' + totalLabel + '</span><span>' + (total > 0 ? fmt2(total) : '—') + '</span></div>';
       if (hasUnp) html += '<div class="ck-total-note">* Algunos servicios se cotizan por separado y no se suman al total.</div>';
       if (trasladoNote) html += '<div class="ck-total-note">' + trasladoNote + '</div>';
-      if (n >= 4) html += '<div class="ck-total-note">Para grupos de 4+ personas, una asesora de Exentia revisa tu caso por WhatsApp y confirma cuántas terapeutas asignar.</div>';
+      if (n >= 4) html += '<div class="ck-total-note">Para grupos de 4+ personas, el equipo de Exentia revisa tu caso por WhatsApp y confirma cuántas terapeutas asignar.</div>';
       totalsEl.innerHTML = html;
     }
 
@@ -15665,7 +15665,7 @@ try {
     var pres = sess.pref_presion || '';
     var aro = sess.pref_aromas || '';
     var gen = sess.preferencia_sexo || sess.pref_genero || '';
-    var html = '<h2 class="ex-cuenta-h">Mis <em>preferencias</em></h2><p class="ex-cuenta-sub">Tu terapeuta las verá antes de tu cita.</p>';
+    var html = '<h2 class="ex-cuenta-h">Mis <em>preferencias</em></h2><p class="ex-cuenta-sub">Las preferencias que selecciones serán consideradas por tu terapeuta antes de tu cita.</p>';
     html += '<div class="ex-cuenta-block">';
     html += '<div class="ex-cuenta-pref-label">PRESIÓN PREFERIDA</div><div class="ex-cuenta-pref-grid">';
     ['suave','media','fuerte'].forEach(function(v){
@@ -15677,12 +15677,12 @@ try {
       html += '<button type="button" class="ex-cuenta-pref-chip' + (aro===p[0]?' active':'') + '" data-pref="aromas" data-val="' + p[0] + '">' + p[1] + '</button>';
     });
     html += '</div>';
-    html += '<div class="ex-cuenta-pref-label">GÉNERO DE LA TERAPEUTA</div><div class="ex-cuenta-pref-grid">';
-    [['mujer','Prefiero mujer'],['hombre','Prefiero hombre'],['cualquiera','Cualquiera']].forEach(function(p){
+    html += '<div class="ex-cuenta-pref-label">GÉNERO DEL TERAPEUTA</div><div class="ex-cuenta-pref-grid">';
+    [['mujer','Mujer'],['hombre','Hombre'],['cualquiera','Sin preferencia']].forEach(function(p){
       html += '<button type="button" class="ex-cuenta-pref-chip' + (gen===p[0]?' active':'') + '" data-pref="genero" data-val="' + p[0] + '">' + p[1] + '</button>';
     });
     html += '</div>';
-    html += '<p class="ex-cuenta-sub" style="margin-top:18px; font-style:italic;">Para cambiar una preferencia, contacta a tu asesora por WhatsApp. <a onclick="window.open(\'https://wa.me/' + YAZ_WHATSAPP + '?text=Hola%2C+quiero+actualizar+mis+preferencias.\', \'_blank\')" style="color:var(--brown); text-decoration:underline; cursor:pointer;">Abrir WhatsApp →</a></p>';
+    html += '<p class="ex-cuenta-sub" style="margin-top:18px; font-style:italic;">Para cambiar una preferencia, contacta a nuestro equipo por WhatsApp. <a onclick="window.open(\'https://wa.me/' + YAZ_WHATSAPP + '?text=Hola%2C+quiero+actualizar+mis+preferencias.\', \'_blank\')" style="color:var(--brown); text-decoration:underline; cursor:pointer;">Abrir WhatsApp →</a></p>';
     html += '</div>';
     main.innerHTML = html;
   }
@@ -15695,7 +15695,7 @@ try {
     html += '<div class="ex-cuenta-datos-row"><label>Correo electrónico</label><span>' + (sess.email||'—') + '</span></div>';
     html += '<div class="ex-cuenta-datos-row"><label>WhatsApp</label><span>' + (sess.phone||'—') + '</span></div>';
     html += '</div>';
-    html += '<p class="ex-cuenta-sub" style="font-style:italic;">Para cambiar tus datos, contacta a tu asesora. <a onclick="window.open(\'https://wa.me/' + YAZ_WHATSAPP + '?text=Hola%2C+quiero+actualizar+mis+datos.\', \'_blank\')" style="color:var(--brown); text-decoration:underline; cursor:pointer;">Abrir WhatsApp →</a></p>';
+    html += '<p class="ex-cuenta-sub" style="font-style:italic;">Para cambiar tus datos, contacta a nuestro equipo. <a onclick="window.open(\'https://wa.me/' + YAZ_WHATSAPP + '?text=Hola%2C+quiero+actualizar+mis+datos.\', \'_blank\')" style="color:var(--brown); text-decoration:underline; cursor:pointer;">Abrir WhatsApp →</a></p>';
     main.innerHTML = html;
   }
 
@@ -17450,14 +17450,13 @@ try {
     'Sin cargo de traslado': 'No travel fee',
     'Más popular': 'Most popular', 'Recomendado para grupos': 'Recommended for groups',
     'Te ayudamos por WhatsApp': 'We’ll help you on WhatsApp',
-    'Una asesora confirma tu cita y resuelve tus dudas': 'An advisor confirms your appointment and answers your questions',
     'Agenda aquí': 'Book here',
     'Elige fecha y hora en el calendario, listo en 1 minuto': 'Pick a date and time on the calendar — done in 1 minute',
     'Para agendar en línea necesitamos tu correo y WhatsApp. Si prefieres, continúa por WhatsApp y nosotros lo cerramos contigo.': 'To book online we need your email and WhatsApp. If you prefer, continue on WhatsApp and we’ll finish it with you.',
     'Si la disponibilidad del equipo cambia, te avisamos antes de confirmar la cita.': 'If team availability changes, we’ll let you know before confirming your appointment.',
     'Cargo mínimo por 1 terapeuta. Elige una opción arriba para ver el cargo exacto.': 'Minimum fee for 1 therapist. Choose an option above to see the exact fee.',
     'Cargo mínimo por 1 terapeuta. El equipo confirma el final según cuántas atiendan.': 'Minimum fee for 1 therapist. The team confirms the final fee based on how many therapists attend.',
-    'Para grupos de 4+ personas, una asesora de Exentia revisa tu caso por WhatsApp y confirma cuántas terapeutas asignar.': 'For groups of 4+, an Exentia advisor reviews your case on WhatsApp and confirms how many therapists to assign.',
+    'Para grupos de 4+ personas, el equipo de Exentia revisa tu caso por WhatsApp y confirma cuántas terapeutas asignar.': 'For groups of 4+, the Exentia team reviews your case on WhatsApp and confirms how many therapists to assign.',
     '* Algunos servicios se cotizan por separado y no se suman al total.': '* Some services are quoted separately and are not added to the total.',
     'a confirmar*': 'to be quoted*',
     // ── Categorías ──
@@ -17875,7 +17874,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v217-4prs-henry-horario-mapa-nombre-neutro', stamp: '2026-08-04 14:59' };
+  var EX_BUILD = { version: 'v218-3prs-henry-genero-asesora-icono', stamp: '2026-08-04 15:42' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
