@@ -8400,7 +8400,8 @@ try {
         <div class="ck-totals" id="ck-totals"></div>
       </div>
       <div class="choice-options">
-        <button class="choice-btn choice-pay" onclick="openPagoSimulador()" type="button">
+        <!-- Domicilio: paga para confirmar (compromiso de traslado del terapeuta). -->
+        <button class="choice-btn choice-pay" id="ck-btn-pagar" onclick="openPagoSimulador()" type="button" style="display:none;">
           <svg class="choice-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 11h20M6 16h4"/></svg>
           <div class="choice-text">
             <strong>Pagar</strong>
@@ -8408,6 +8409,19 @@ try {
           </div>
           <span class="choice-arrow" aria-hidden="true">→</span>
         </button>
+        <!-- Sucursal: reserva sin pagar, el monto final se cobra en el spa. -->
+        <button class="choice-btn choice-pay" id="ck-btn-reservar" onclick="closeModal('modal-choice'); openModal('modal-agendar');" type="button" style="display:none;">
+          <svg class="choice-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-7"/></svg>
+          <div class="choice-text">
+            <strong>Confirmar cita</strong>
+            <span>Pagas al llegar al spa.</span>
+          </div>
+          <span class="choice-arrow" aria-hidden="true">→</span>
+        </button>
+        <!-- Nota informativa para sucursal — visible solo cuando #ck-btn-reservar está visible. -->
+        <p id="ck-suc-note" class="ck-suc-note" style="display:none;margin:12px 4px 0;font-size:12px;color:#6a6551;line-height:1.5;text-align:center;">
+          Tu cita se cobra directamente en <strong>Plaza Hive</strong> cuando llegues. Aceptamos efectivo, tarjeta y transferencia.
+        </p>
       </div>
     </div>
   </div>
@@ -8947,6 +8961,16 @@ try {
       costo_traslado_total: place.costoTrasladoTotal || '',
       personas_servicios: personasServicios,
       valor_ticket_mxn: subtotal + traslado,
+      // Contrato con el panel/admin (2026-08-04):
+      //  · precio_total_mxn = lo que el cliente DEBE pagar en total (servicios + traslado)
+      //  · precio_pagado_mxn = lo que YA se cobró en el momento de crear la reserva
+      //  · pago_metodo = método usado en ese cobro (null si aún no se cobró)
+      // Defaults asumen "no se cobró en la página" (sucursal + fallbacks). Para el flow
+      // Stripe (domicilio), el nodo `Build reserva body` del workflow exentia-stripe-webhook
+      // sobreescribe estos 2 campos con el monto/método reales cuando Stripe confirma.
+      precio_total_mxn: subtotal + traslado,
+      precio_pagado_mxn: 0,
+      pago_metodo: null,
       preferencia_sexo: ((typeof prefSexoGlobal === 'function') ? prefSexoGlobal() : '') || (sess && (sess.preferencia_sexo || sess.pref_genero)) || '',
       notas_cliente: notas,
       notas: notas,
@@ -14493,6 +14517,15 @@ try {
       btn.disabled = false;
       btn.setAttribute('aria-disabled', 'false');
     });
+
+    // Domicilio paga para confirmar (compromiso de traslado); sucursal solo reserva,
+    // el monto final se desconoce hasta estar en el spa y se cobra ahí. Henry 2026-08-04.
+    var btnPagar = document.getElementById('ck-btn-pagar');
+    var btnReservar = document.getElementById('ck-btn-reservar');
+    var sucNote = document.getElementById('ck-suc-note');
+    if (btnPagar) btnPagar.style.display = calc.isHome ? '' : 'none';
+    if (btnReservar) btnReservar.style.display = calc.isHome ? 'none' : '';
+    if (sucNote) sucNote.style.display = calc.isHome ? 'none' : '';
   }
   window.renderCheckoutCart = renderCheckoutCart;
 
@@ -17874,7 +17907,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v218-3prs-henry-genero-asesora-icono', stamp: '2026-08-04 15:42' };
+  var EX_BUILD = { version: 'v219-pr14-sucursal-sin-pago-payload', stamp: '2026-08-04 16:02' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
