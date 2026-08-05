@@ -166,6 +166,9 @@ src="https://www.facebook.com/tr?id=1405416301317321&ev=PageView&noscript=1"
      Usamos :has() (Chrome/Safari/Edge modernos) + fallback JS body.in-detail. */
   body:has(#service-detail-view:not(.hidden)) nav,
   body.in-detail nav { border-bottom: none; }
+  body.in-legal #agendar,
+  body.in-legal #ubicacion,
+  body.in-legal #faq { display: none !important; }
   nav.scrolled {
     box-shadow: 0 2px 24px var(--shadow);
   }
@@ -10599,6 +10602,7 @@ try {
     // Fallback para navegadores sin :has() — el CSS quita el border-bottom
     // del nav cuando body tiene esta clase, para no crear doble línea con .cat-tabs.
     document.body.classList.toggle('in-detail', viewId === 'service-detail-view');
+    document.body.classList.toggle('in-legal', viewId === 'legal-view');
 
     if (viewId === 'service-detail-view') {
       detailView.classList.remove('hidden');
@@ -18177,7 +18181,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v227-fix-nav-legal-view', stamp: '2026-08-05 13:00' };
+  var EX_BUILD = { version: 'v228-legal-hide-sections', stamp: '2026-08-05 13:15' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
