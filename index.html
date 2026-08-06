@@ -6958,7 +6958,7 @@ try {
         {
           "@type": "OpeningHoursSpecification",
           "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
-          "opens": "10:00",
+          "opens": "09:00",
           "closes": "18:00"
         }
       ],
@@ -6984,7 +6984,7 @@ try {
       "mainEntity": [
         {"@type": "Question", "name": "¿Necesito hacer cita previa?", "acceptedAnswer": {"@type": "Answer", "text": "Sí, te recomendamos agendar tu cita con anticipación para garantizar tu espacio. Puedes reservar desde nuestra página en pocos pasos o por WhatsApp."}},
         {"@type": "Question", "name": "¿Qué tipo de productos utilizan?", "acceptedAnswer": {"@type": "Answer", "text": "Trabajamos con productos orgánicos y naturales cuidadosamente seleccionados. Utilizamos ingredientes reales y fórmulas limpias que nutren y restauran."}},
-        {"@type": "Question", "name": "¿Cuál es su horario de atención?", "acceptedAnswer": {"@type": "Answer", "text": "Atendemos de lunes a sábado de 10:00 AM a 6:00 PM. Domingos permanecemos cerrados."}},
+        {"@type": "Question", "name": "¿Cuál es su horario de atención?", "acceptedAnswer": {"@type": "Answer", "text": "Atendemos de lunes a sábado. En sucursal (Exentia Spa & Beauty Salon) de 9:00 AM a 6:00 PM. Servicio a domicilio (Exentia At Home) de 7:00 AM a 8:00 PM (último horario de inicio). Domingos permanecemos cerrados."}},
         {"@type": "Question", "name": "¿Dónde están ubicados?", "acceptedAnswer": {"@type": "Answer", "text": "Nos encontramos en Plaza Hive, sobre Avenida Huayacán en Cancún, Quintana Roo."}},
         {"@type": "Question", "name": "¿Tienen servicios para niños?", "acceptedAnswer": {"@type": "Answer", "text": "Sí, contamos con Spa Kids & Teens, experiencias completas de spa diseñadas para niños y adolescentes en un entorno cálido y seguro."}},
         {"@type": "Question", "name": "¿Ofrecen servicio a domicilio?", "acceptedAnswer": {"@type": "Answer", "text": "Sí, a través de Exentia At Home llevamos experiencias de bienestar personalizadas a tu hogar, hotel o evento."}},
@@ -7497,7 +7497,7 @@ try {
             </div>
             <div class="text">
               <div class="label">Horario</div>
-              <div class="value">Lunes a Sábado<br>10:00 AM - 6:00 PM</div>
+              <div class="value">Lunes a Sábado<br>Sucursal: 9:00 AM – 6:00 PM<br>A domicilio: 7:00 AM – 8:00 PM<br><span style="font-size:12px;opacity:0.7;">(último horario de inicio a domicilio)</span></div>
             </div>
           </li>
         </ul>
@@ -7537,7 +7537,7 @@ try {
           <span>¿Cuál es su horario de atención?</span>
           <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
-        <div class="faq-answer"><p>Atendemos de lunes a sábado de 10:00 AM a 6:00 PM. Domingos permanecemos cerrados. Te recomendamos agendar con anticipación para asegurar tu horario preferido.</p></div>
+        <div class="faq-answer"><p>Atendemos de lunes a sábado. En sucursal (Exentia Spa & Beauty Salon) de 9:00 AM a 6:00 PM. A domicilio (Exentia At Home) de 7:00 AM a 8:00 PM, siendo esta última la hora máxima para iniciar el servicio. Domingos permanecemos cerrados. Te recomendamos agendar con anticipación para asegurar tu horario preferido.</p></div>
       </div>
       <div class="faq-item">
         <button class="faq-question" onclick="this.parentElement.classList.toggle('open')">
@@ -8111,7 +8111,7 @@ try {
           <div id="cal2-slots" class="cal2-slots"></div>
         </div>
         <!-- Aviso -->
-        <p class="cal2-note">Lun-Sáb · 10:00 AM - 6:00 PM · El equipo confirma por WhatsApp.</p>
+        <p class="cal2-note" id="cal2-note">Lun-Sáb · El equipo confirma por WhatsApp.</p>
       </div>
     </div>
     <div class="modal-footer-sticky" id="cal2-footer">
@@ -13676,6 +13676,14 @@ try {
         ? 'Tu cita dura aproximadamente ' + durMin + ' min · selecciona día y horario.'
         : 'Selecciona el día y horario que mejor te acomode.';
     }
+    // Nota de horario según modalidad (sucursal 9-6 / domicilio 7-8 último inicio)
+    var hNote = document.getElementById('cal2-note');
+    if (hNote) {
+      var isDom = (typeof citaPlace !== 'undefined' && citaPlace && citaPlace.mode === 'domicilio');
+      hNote.textContent = isDom
+        ? 'Lun-Sáb · 7:00 AM – 8:00 PM (último horario de inicio) · El equipo confirma por WhatsApp.'
+        : 'Lun-Sáb · 9:00 AM – 6:00 PM · El equipo confirma por WhatsApp.';
+    }
     openModal('modal-calendar');
     renderCal2();
     updateCal2Selection();
@@ -17685,7 +17693,7 @@ try {
     '¿Qué tipo de productos utilizan?': 'What kind of products do you use?',
     'Trabajamos con productos orgánicos y naturales cuidadosamente seleccionados. Creemos que lo que toca tu piel es tan importante como lo que sientes mientras te cuidan. Utilizamos ingredientes reales y fórmulas limpias que nutren y restauran.': 'We work with carefully selected organic, natural products. We believe what touches your skin matters as much as what you feel while being cared for. We use real ingredients and clean formulas that nourish and restore.',
     '¿Cuál es su horario de atención?': 'What are your opening hours?',
-    'Atendemos de lunes a sábado de 10:00 AM a 6:00 PM. Domingos permanecemos cerrados. Te recomendamos agendar con anticipación para asegurar tu horario preferido.': 'We are open Monday to Saturday from 10:00 AM to 6:00 PM. We are closed on Sundays. We recommend booking in advance to secure your preferred time.',
+    'Atendemos de lunes a sábado. En sucursal (Exentia Spa & Beauty Salon) de 9:00 AM a 6:00 PM. A domicilio (Exentia At Home) de 7:00 AM a 8:00 PM, siendo esta última la hora máxima para iniciar el servicio. Domingos permanecemos cerrados. Te recomendamos agendar con anticipación para asegurar tu horario preferido.': 'We are open Monday to Saturday. In-spa (Exentia Spa & Beauty Salon) from 9:00 AM to 6:00 PM. At-home service (Exentia At Home) from 7:00 AM to 8:00 PM, the latter being the latest time to start service. Closed on Sundays. We recommend booking in advance to secure your preferred time.',
     '¿Dónde están ubicados?': 'Where are you located?',
     'Nos encontramos en Plaza Hive, sobre Avenida Huayacán en Cancún, Quintana Roo. Un espacio diseñado para tu desconexión en una zona accesible y tranquila de la ciudad.': 'We are located at Plaza Hive, on Avenida Huayacán in Cancún, Quintana Roo. A space designed for your disconnection in an accessible, quiet part of the city.',
     '¿Tienen servicios para niños?': 'Do you have services for kids?',
@@ -18181,7 +18189,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v228-legal-hide-sections', stamp: '2026-08-05 13:15' };
+  var EX_BUILD = { version: 'v229-horarios-sucursal-domicilio', stamp: '2026-08-06 10:15' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
