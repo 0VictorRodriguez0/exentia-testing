@@ -7713,7 +7713,7 @@ try {
   <div class="modal-box" style="max-width:820px;">
     <div class="modal-close" onclick="closeModal('modal-modality')" aria-label="Cerrar">&#10005;</div>
     <div class="modal-nav">
-      <button class="modal-back" onclick="(window._modalityFrom === 'select' ? openSelectModal() : openPlaceFirstModal()); closeModal('modal-modality');">&#8592; Regresar</button>
+      <button class="modal-back" onclick="try{resetFlowState({personas:'wipe', svMode:null, clearPlace:true});}catch(_){}; openPlaceFirstModal(); closeModal('modal-modality');">&#8592; Regresar</button>
     </div>
     <div class="modal-header" style="margin-bottom:18px;">
       <span class="logo">exentia</span>
@@ -18189,7 +18189,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v232-pref-sin-preferencia-label', stamp: '2026-08-06 11:40' };
+  var EX_BUILD = { version: 'v233-fix-back-modality-loop', stamp: '2026-08-06 12:10' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
