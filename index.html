@@ -13227,7 +13227,7 @@ try {
     var p = buildReservaPayload();
     var prefLabel = { mujer: 'Mujer', hombre: 'Hombre', indistinto: 'Indiferente' };
     var lines = [];
-    lines.push('Hola Exentia, acabo de pagar y quiero confirmar mi cita.');
+    lines.push('Hola Exentia, acabo de realizar mi reservación y deseo confirmar los detalles de mi cita.');
     if (window._bookingCode) {
       lines.push('');
       lines.push('*Código de reserva:* ' + window._bookingCode);
@@ -18189,7 +18189,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v230-quita-ultimo-horario-inicio', stamp: '2026-08-06 11:00' };
+  var EX_BUILD = { version: 'v231-wa-msg-confirmacion', stamp: '2026-08-06 11:20' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
