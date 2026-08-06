@@ -13225,7 +13225,7 @@ try {
 
   function _pgBuildWaMessage() {
     var p = buildReservaPayload();
-    var prefLabel = { mujer: 'Mujer', hombre: 'Hombre', indistinto: 'Indiferente' };
+    var prefLabel = { mujer: 'Mujer', hombre: 'Hombre', indistinto: 'Sin preferencia' };
     var lines = [];
     lines.push('Hola Exentia, acabo de realizar mi reservación y deseo confirmar los detalles de mi cita.');
     if (window._bookingCode) {
@@ -14635,7 +14635,7 @@ try {
       var PREF_OPTS = [
         { val: 'mujer', label: 'Mujer' },
         { val: 'hombre', label: 'Hombre' },
-        { val: 'indistinto', label: 'Indiferente' }
+        { val: 'indistinto', label: 'Sin preferencia' }
       ];
       // Personas reales (sin la pseudo-persona 0 del paquete de pareja).
       var prefIds = (typeof prefPersonasList === 'function') ? prefPersonasList() : [1];
@@ -17752,7 +17752,7 @@ try {
     'Tus servicios': 'Your services', '+ cambiar / agregar': '+ change / add',
     '¿Cómo prefieren recibir el servicio?': 'How would you like to receive the service?',
     '¿Quién prefieres que te atienda?': 'Who would you prefer to be treated by?',
-    'Mujer': 'Female', 'Hombre': 'Male', 'Indiferente': 'No preference',
+    'Mujer': 'Female', 'Hombre': 'Male', 'Sin preferencia': 'No preference',
     'Elige una opción': 'Choose an option',
     'Sí, al mismo tiempo': 'Yes, at the same time',
     'Varias terapeutas atienden a la vez · sesión más rápida': 'Several therapists at once · faster session',
@@ -18189,7 +18189,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v231-wa-msg-confirmacion', stamp: '2026-08-06 11:20' };
+  var EX_BUILD = { version: 'v232-pref-sin-preferencia-label', stamp: '2026-08-06 11:40' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
