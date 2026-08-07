@@ -16044,6 +16044,62 @@ try {
     if (!val) return '';
     return (_PREF_VALUE_TO_SLUG[kind] && _PREF_VALUE_TO_SLUG[kind][val]) || String(val).toLowerCase();
   }
+  // Inverso: slug del chip -> valor exacto que el backend espera en GHL.
+  var _PREF_SLUG_TO_VALUE = {
+    presion: { 'suave': 'Suave', 'media': 'Media', 'fuerte': 'Fuerte' },
+    aromas:  { 'sin': 'Sin aromas', 'suaves': 'Aromas suaves', 'cualquiera': 'Cualquier aroma' },
+    genero:  { 'mujer': 'Mujer', 'hombre': 'Hombre', 'cualquiera': 'Sin preferencia' }
+  };
+  function _prefSlugToValue(kind, slug) {
+    return (_PREF_SLUG_TO_VALUE[kind] && _PREF_SLUG_TO_VALUE[kind][slug]) || '';
+  }
+
+  // Guarda una preferencia optimísticamente: pinta el chip activo, dispara POST,
+  // hace rollback si falla. Invalida cache me-v2 al éxito.
+  async function savePreferencia(kind, slugVal) {
+    var jwt = null;
+    try { jwt = localStorage.getItem(CLIENTE_AUTH.JWT_KEY); } catch(_){}
+    if (!jwt) { if (typeof openAuthModal === 'function') openAuthModal(); return; }
+    var backendVal = _prefSlugToValue(kind, slugVal);
+    if (!backendVal) return;
+    var prof = _cuentaState.profile || (_cuentaState.profile = {});
+    if (!prof.preferencias) prof.preferencias = {};
+    var oldVal = prof.preferencias[kind];
+    prof.preferencias[kind] = backendVal;
+    renderTabPreferencias();
+    var body = { prefs: {} };
+    body.prefs[kind] = backendVal;
+    try {
+      var res = await fetch(window.EXENTIA_CONFIG.WEBHOOK_UPDATE_PREFS, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (res.status === 401) {
+        prof.preferencias[kind] = oldVal;
+        renderTabPreferencias();
+        try { localStorage.removeItem(CLIENTE_AUTH.JWT_KEY); } catch(_){}
+        try { refreshUserBtnState(); } catch(_){}
+        closeModal('modal-cuenta');
+        if (typeof openAuthModal === 'function') openAuthModal();
+        return;
+      }
+      var data = await res.json().catch(function(){ return null; });
+      if (!res.ok || !data || data.ok === false) {
+        prof.preferencias[kind] = oldVal;
+        renderTabPreferencias();
+        if (typeof showFlowToast === 'function') showFlowToast('No pudimos guardar tu preferencia. Inténtalo de nuevo.', 'warn');
+        return;
+      }
+      _cuentaState.lastLoad = 0;
+      if (typeof showFlowToast === 'function') showFlowToast('Preferencia guardada.', 'success');
+    } catch(e) {
+      prof.preferencias[kind] = oldVal;
+      renderTabPreferencias();
+      if (typeof showFlowToast === 'function') showFlowToast('Error de conexión. Reintenta.', 'warn');
+    }
+  }
+  window.savePreferencia = savePreferencia;
 
   function renderTabPreferencias() {
     var main = document.getElementById('ex-cuenta-main');
@@ -16069,9 +16125,17 @@ try {
       html += '<button type="button" class="ex-cuenta-pref-chip' + (gen===p[0]?' active':'') + '" data-pref="genero" data-val="' + p[0] + '">' + p[1] + '</button>';
     });
     html += '</div>';
-    html += '<p class="ex-cuenta-sub" style="margin-top:18px; font-style:italic;">Para cambiar una preferencia, contacta a nuestro equipo por WhatsApp. <a onclick="window.open(\'https://wa.me/' + YAZ_WHATSAPP + '?text=Hola%2C+quiero+actualizar+mis+preferencias.\', \'_blank\')" style="color:var(--brown); text-decoration:underline; cursor:pointer;">Abrir WhatsApp →</a></p>';
+    html += '<p class="ex-cuenta-sub" style="margin-top:18px; font-style:italic;">Se guarda automáticamente al elegir. Tu terapeuta lo verá antes de tu próxima cita.</p>';
     html += '</div>';
     main.innerHTML = html;
+    // Wire clicks para editar en vivo
+    main.querySelectorAll('.ex-cuenta-pref-chip').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        var kind = this.getAttribute('data-pref');
+        var val = this.getAttribute('data-val');
+        if (kind && val) savePreferencia(kind, val);
+      });
+    });
   }
   function renderTabDatos() {
     var main = document.getElementById('ex-cuenta-main');
@@ -18265,7 +18329,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v235-mi-cuenta-me-v2', stamp: '2026-08-07 11:00' };
+  var EX_BUILD = { version: 'v236-prefs-editables', stamp: '2026-08-07 11:30' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
