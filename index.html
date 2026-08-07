@@ -15895,7 +15895,10 @@ try {
       booking_code: b.code || b.booking_code,
       fecha_agendada: b.fecha || b.fecha_agendada,
       hora_agendada: b.hora || b.hora_agendada,
+      // `modalidad` = modo (individual|pareja|grupo). El LUGAR viene en `lugar`/`tipo_cita`.
       modalidad: b.modalidad,
+      lugar: b.lugar || b.tipo_cita || null,
+      tipo_cita: b.tipo_cita || b.lugar || null,
       valor_ticket_mxn: b.total_mxn != null ? b.total_mxn : (b.precio_total != null ? b.precio_total : b.valor_ticket_mxn),
       precio_total_mxn: b.precio_total != null ? b.precio_total : b.precio_total_mxn,
       zona_colonia: b.zona || b.zona_colonia,
@@ -16002,17 +16005,14 @@ try {
   }
   window._estadoCita = _estadoCita;
 
-  // Lugar de la cita (Sucursal vs Domicilio). OJO: `bookings.modalidad` guarda el MODO
-  // (individual | pareja | grupo), NO el lugar. El lugar canónico es `tipo_cita`, que
-  // hoy no está expuesto en la vista exentia_bookings_dash — por eso el fallback por
-  // dirección/zona, que es como se derivaba antes de que existiera la columna.
+  // Lugar de la cita (Sucursal vs Domicilio). me-v2 manda `lugar` ya derivado y
+  // `tipo_cita` crudo — cualquiera de los dos es canónico. `modalidad` NO sirve para
+  // esto: guarda el modo (individual | pareja | grupo). El fallback por dirección solo
+  // cubre bookings legacy anteriores a que la vista expusiera tipo_cita.
   function _lugarCita(b) {
-    var tipo = String(b.tipo_cita || '').trim().toLowerCase();
-    if (tipo === 'domicilio') return 'Exentia At Home';
-    if (tipo === 'sucursal') return 'Sucursal Plaza Hive';
-    var mod = String(b.modalidad || '').trim().toLowerCase();
-    if (mod === 'domicilio') return 'Exentia At Home';
-    if (mod === 'sucursal') return 'Sucursal Plaza Hive';
+    var v = String(b.lugar || b.tipo_cita || '').trim().toLowerCase();
+    if (v === 'domicilio') return 'Exentia At Home';
+    if (v === 'sucursal') return 'Sucursal Plaza Hive';
     if (b.direccion_libre || b.direccion_maps_url || b.zona_colonia) return 'Exentia At Home';
     return 'Sucursal Plaza Hive';
   }
@@ -18451,7 +18451,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v241-fix-lugar-vs-modalidad', stamp: '2026-08-07 15:05' };
+  var EX_BUILD = { version: 'v242-lugar-canonico-backend', stamp: '2026-08-07 15:25' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
