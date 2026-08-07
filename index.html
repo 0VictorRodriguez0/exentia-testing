@@ -13654,7 +13654,7 @@ try {
     if (!sel || !btn) return;
     if (cal2.selectedDate && cal2.selectedTime) {
       sel.classList.remove('empty');
-      var d = new Date(cal2.selectedDate + 'T00:00:00');
+      var d = (window.parseLocalDate && window.parseLocalDate(cal2.selectedDate)) || new Date(cal2.selectedDate + 'T00:00:00');
       var fmt = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
       sel.textContent = fmt.charAt(0).toUpperCase() + fmt.slice(1) + ' · ' + cal2.selectedTime;
       btn.disabled = false;
@@ -15621,13 +15621,23 @@ try {
     return ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][n] || '';
   }
   function fmtDay(d) { return ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d] || ''; }
-  function fmtFecha(iso) {
+  // Parsea 'YYYY-MM-DD' como fecha local Cancún (evita el shift a UTC midnight
+  // que interpretaba el día anterior). Acepta también timestamps ISO completos.
+  function parseLocalDate(iso) {
+    if (!iso) return null;
+    var s = String(iso).slice(0, 10);
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) { var d = new Date(iso); return isNaN(d) ? null : d; }
+    return new Date(+m[1], +m[2] - 1, +m[3]);
+  }
+  window.parseLocalDate = parseLocalDate;
+  function fmtFecha(iso, hora) {
     if (!iso) return '';
-    var dt = new Date(iso);
-    if (isNaN(dt)) return iso;
-    var hh = dt.getHours().toString().padStart(2,'0');
-    var mm = dt.getMinutes().toString().padStart(2,'0');
-    return fmtDay(dt.getDay()) + ' ' + dt.getDate() + ' ' + fmtMonth(dt.getMonth()).toLowerCase() + ' · ' + hh + ':' + mm;
+    var dt = parseLocalDate(iso);
+    if (!dt) return String(iso);
+    var out = fmtDay(dt.getDay()) + ' ' + dt.getDate() + ' ' + fmtMonth(dt.getMonth()).toLowerCase();
+    if (hora) out += ' · ' + String(hora).slice(0, 5);
+    return out;
   }
   function svcSummary(servicios) {
     try {
@@ -15703,9 +15713,10 @@ try {
         : [];
       var now = Date.now();
       var rows = allBookings.filter(function(b){
-        return b && b.fecha_agendada && new Date(b.fecha_agendada).getTime() > now;
+        var dt = b && b.fecha_agendada ? parseLocalDate(b.fecha_agendada) : null;
+        return dt && dt.getTime() > now;
       }).sort(function(a, b){
-        return new Date(a.fecha_agendada) - new Date(b.fecha_agendada);
+        return parseLocalDate(a.fecha_agendada) - parseLocalDate(b.fecha_agendada);
       });
       // Si no hay próxima cita con fecha pero sí hay pendientes (sin fecha), mostramos la más reciente
       if (rows.length === 0) {
@@ -15733,7 +15744,7 @@ try {
         var b = rows[0];
         if (wrap) {
           wrap.style.display = '';
-          document.getElementById('ex-userdrop-cita-when').textContent = fmtFecha(b.fecha_agendada);
+          document.getElementById('ex-userdrop-cita-when').textContent = fmtFecha(b.fecha_agendada, b.hora_agendada);
           var what = svcSummary(b.servicios);
           var ter = b.terapeuta_asignada ? ' · ' + b.terapeuta_asignada : '';
           document.getElementById('ex-userdrop-cita-what').textContent = (what || 'Servicio') + ' · ' + (b.modalidad === 'domicilio' ? 'Domicilio' : 'Sucursal') + ter;
@@ -15768,7 +15779,7 @@ try {
     if (!b) return;
     var sess = getClienteSession() || {};
     var nombre = (sess.firstName || '') + ' ' + (sess.lastName || '');
-    var when = fmtFecha(b.fecha_agendada);
+    var when = fmtFecha(b.fecha_agendada, b.hora_agendada);
     var what = svcSummary(b.servicios);
     var msg = 'Hola, soy ' + nombre.trim() + '. Quiero cancelar mi cita de ' + what + ' del ' + when + ' (código ' + (b.booking_code || '') + ').';
     var url = 'https://wa.me/' + YAZ_WHATSAPP + '?text=' + encodeURIComponent(msg);
@@ -15782,7 +15793,7 @@ try {
     if (!b) return;
     var sess = getClienteSession() || {};
     var nombre = (sess.firstName || '') + ' ' + (sess.lastName || '');
-    var when = fmtFecha(b.fecha_agendada);
+    var when = fmtFecha(b.fecha_agendada, b.hora_agendada);
     var what = svcSummary(b.servicios);
     var msg = 'Hola, soy ' + nombre.trim() + '. Quiero reprogramar mi cita de ' + what + ' del ' + when + ' (código ' + (b.booking_code || '') + ').';
     window.open('https://wa.me/' + YAZ_WHATSAPP + '?text=' + encodeURIComponent(msg), '_blank');
@@ -15870,21 +15881,21 @@ try {
     var now = Date.now();
     var up = [], hi = [], pe = [];
     _cuentaState.bookings.forEach(function(b){
-      if (!b.fecha_agendada) pe.push(b);
-      else if (new Date(b.fecha_agendada).getTime() > now) up.push(b);
-      else hi.push(b);
+      if (!b.fecha_agendada) { pe.push(b); return; }
+      var dt = parseLocalDate(b.fecha_agendada);
+      if (dt && dt.getTime() > now) up.push(b); else hi.push(b);
     });
-    up.sort(function(a,b){ return new Date(a.fecha_agendada) - new Date(b.fecha_agendada); });
+    up.sort(function(a,b){ return parseLocalDate(a.fecha_agendada) - parseLocalDate(b.fecha_agendada); });
     pe.sort(function(a,b){ return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
     return { upcoming: up, history: hi, pending: pe };
   }
 
   function _citaCard(b, kind) {
-    var dt = b.fecha_agendada ? new Date(b.fecha_agendada) : null;
+    var dt = b.fecha_agendada ? parseLocalDate(b.fecha_agendada) : null;
     var pending = !dt;
     var d = dt ? dt.getDate() : '·';
     var m = dt ? fmtMonth(dt.getMonth()) : 'POR';
-    var hh = dt ? (dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0')) : 'Por confirmar';
+    var hh = b.hora_agendada ? String(b.hora_agendada).slice(0, 5) : 'Por confirmar';
     var dia = dt ? fmtDay(dt.getDay()) : '';
     var what = svcSummary(b.servicios) || 'Servicio Exentia';
     var ter = b.terapeuta_asignada ? '<div class="therapist">Con <b>' + b.terapeuta_asignada + '</b></div>' : '';
@@ -18189,7 +18200,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v233-fix-back-modality-loop', stamp: '2026-08-06 12:10' };
+  var EX_BUILD = { version: 'v234-fix-fecha-parseLocalDate', stamp: '2026-08-07 10:30' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
