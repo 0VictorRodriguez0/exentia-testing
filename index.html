@@ -16206,11 +16206,18 @@ try {
     var key = String(val).trim().toLowerCase();
     return (_PREF_VALUE_TO_SLUG[kind] && _PREF_VALUE_TO_SLUG[kind][key]) || key;
   }
-  // Inverso: slug del chip -> valor exacto que el backend espera en GHL.
+  // Inverso: slug del chip -> valor canónico que se guarda en GHL/Supabase.
+  // Formato acordado con backend (2026-08-07): minúscula / forma corta, igual que
+  // el que ya escribe el flujo de reserva. NO capitalizar — el bot de WhatsApp, el
+  // panel del masajista y el sentiment leen estos strings tal cual. Si algún consumidor
+  // necesita el label largo, hace el mapping de su lado, no en la fuente.
+  //   presion: suave | media | fuerte
+  //   aromas:  sin | suaves | cualquiera
+  //   genero:  mujer | hombre | indistinto   <- ojo: el chip 'cualquiera' guarda 'indistinto'
   var _PREF_SLUG_TO_VALUE = {
-    presion: { 'suave': 'Suave', 'media': 'Media', 'fuerte': 'Fuerte' },
-    aromas:  { 'sin': 'Sin aromas', 'suaves': 'Aromas suaves', 'cualquiera': 'Cualquier aroma' },
-    genero:  { 'mujer': 'Mujer', 'hombre': 'Hombre', 'cualquiera': 'Sin preferencia' }
+    presion: { 'suave': 'suave', 'media': 'media', 'fuerte': 'fuerte' },
+    aromas:  { 'sin': 'sin', 'suaves': 'suaves', 'cualquiera': 'cualquiera' },
+    genero:  { 'mujer': 'mujer', 'hombre': 'hombre', 'cualquiera': 'indistinto' }
   };
   function _prefSlugToValue(kind, slug) {
     return (_PREF_SLUG_TO_VALUE[kind] && _PREF_SLUG_TO_VALUE[kind][slug]) || '';
@@ -18496,7 +18503,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v243-perfil-no-depende-de-citas', stamp: '2026-08-07 16:10' };
+  var EX_BUILD = { version: 'v244-prefs-formato-canonico-minuscula', stamp: '2026-08-07 16:45' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
