@@ -15854,6 +15854,7 @@ try {
       _cuentaState.profile = me.profile;
       _cuentaState.bookings = me.bookings;
       _cuentaState.contactId = me.contactId;
+      _cuentaState.degraded = !!me.degraded;
       _cuentaState.lastLoad = Date.now();
     }
     renderCuentaTab();
@@ -15908,6 +15909,27 @@ try {
     });
   }
 
+  // Perfil mínimo reconstruido desde el JWT. Es el piso de degradación: mientras haya
+  // sesión válida, el cliente SIEMPRE debe ver su nombre/correo, aunque me-v2 falle.
+  // Las preferencias no viajan en el JWT — esas sí quedan vacías hasta que me-v2 responda.
+  function _meFromJWT() {
+    var sess = null;
+    try { sess = getClienteSession(); } catch(_){}
+    if (!sess) return null;
+    return {
+      profile: {
+        nombre: sess.firstName || '',
+        apellido: sess.lastName || '',
+        email: sess.email || '',
+        telefono: sess.phone || '',
+        preferencias: {}
+      },
+      contactId: sess.contactId || null,
+      bookings: [],
+      degraded: true
+    };
+  }
+
   // Endpoint UNO: trae {cliente, citas:{proximas, historial}} en vivo desde GHL + Supabase.
   // Sin cache localStorage (regla del backend). Cache en memoria mínimo (30 s) para no
   // golpear al saltar entre tabs muy rápido.
@@ -15926,22 +15948,40 @@ try {
         try { refreshUserBtnState(); } catch(_){}
         return { unauthorized: true };
       }
-      if (!res.ok) return null;
-      var data = await res.json().catch(function(){ return null; });
+      if (!res.ok) return _meFromJWT();
+      var txt = await res.text();
+      // Cuerpo vacío con 200: pasa cuando el cliente no tiene bookings — n8n no ejecuta
+      // los nodos posteriores si el nodo previo devolvió 0 items, así que 'Construir
+      // respuesta' (que arma cliente Y citas) nunca corre. El perfil no debe caerse por eso.
+      if (!txt || !txt.trim()) {
+        try { console.warn('[ex-me-v2] respuesta vacía (200 sin body) — usando datos del JWT'); } catch(_){}
+        return _meFromJWT();
+      }
+      var data = null;
+      try { data = JSON.parse(txt); } catch(_){}
       // n8n "Respond to Webhook" devuelve los items como ARRAY: [{ok, cliente, citas, ...}].
       // Desenvolver el primer elemento; tolerar también el shape objeto directo.
       if (Array.isArray(data)) data = data[0] || null;
-      if (!data || data.ok === false) return null;
+      if (!data || data.ok === false) return _meFromJWT();
       var prox = ((data.citas && data.citas.proximas) || []).map(_normalizeMeBooking);
       var hist = ((data.citas && data.citas.historial) || []).map(_normalizeMeBooking);
+      var jwtFb = _meFromJWT() || { profile: {} };
+      var cli = data.cliente || {};
       return {
-        profile: data.cliente || {},
-        contactId: data.contactId || null,
+        // Merge con el JWT: si me-v2 manda el campo vacío, no borramos lo que ya sabíamos.
+        profile: {
+          nombre: cli.nombre || jwtFb.profile.nombre || '',
+          apellido: cli.apellido || jwtFb.profile.apellido || '',
+          email: cli.email || jwtFb.profile.email || '',
+          telefono: cli.telefono || jwtFb.profile.telefono || '',
+          preferencias: cli.preferencias || {}
+        },
+        contactId: data.contactId || jwtFb.contactId || null,
         bookings: prox.concat(hist)
       };
     } catch(e) {
       try { console.warn('[ex-me-v2] fetch falló', e); } catch(_){}
-      return null;
+      return _meFromJWT();
     }
   }
   window.fetchClienteMe = fetchClienteMe;
@@ -16247,7 +16287,12 @@ try {
       html += '<button type="button" class="ex-cuenta-pref-chip' + (gen===p[0]?' active':'') + '" data-pref="genero" data-val="' + p[0] + '">' + p[1] + '</button>';
     });
     html += '</div>';
-    html += '<p class="ex-cuenta-sub" style="margin-top:18px; font-style:italic;">Se guarda automáticamente al elegir. Tu terapeuta lo verá antes de tu próxima cita.</p>';
+    if (_cuentaState.degraded) {
+      html += '<p class="ex-cuenta-sub" style="margin-top:18px; color:#a04a3c;">No pudimos cargar tus preferencias guardadas en este momento. '
+            + '<a onclick="_refreshCuentaFromMe({force:true})" style="color:var(--brown); text-decoration:underline; cursor:pointer;">Reintentar</a></p>';
+    } else {
+      html += '<p class="ex-cuenta-sub" style="margin-top:18px; font-style:italic;">Se guarda automáticamente al elegir. Tu terapeuta lo verá antes de tu próxima cita.</p>';
+    }
     html += '</div>';
     main.innerHTML = html;
     // Wire clicks para editar en vivo
@@ -18451,7 +18496,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v242-lugar-canonico-backend', stamp: '2026-08-07 15:25' };
+  var EX_BUILD = { version: 'v243-perfil-no-depende-de-citas', stamp: '2026-08-07 16:10' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
