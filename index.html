@@ -15899,7 +15899,9 @@ try {
       valor_ticket_mxn: b.total_mxn != null ? b.total_mxn : (b.precio_total != null ? b.precio_total : b.valor_ticket_mxn),
       precio_total_mxn: b.precio_total != null ? b.precio_total : b.precio_total_mxn,
       zona_colonia: b.zona || b.zona_colonia,
-      terapeuta_asignada: b.terapeuta_nombre || b.terapeuta_asignada
+      terapeuta_asignada: b.terapeuta_nombre || b.terapeuta_asignada,
+      // Cierre canónico del servicio (vive en booking_slots, expuesto por la vista).
+      servicio_terminado_at: b.servicio_terminado_at || b.checkout_terapeuta_at || null
     });
   }
 
@@ -15956,29 +15958,40 @@ try {
   // + slots reclamados. Los estados internos del panel (pool, claimed…) no se muestran
   // literales: se traducen a algo que el cliente entienda.
   //   inactive: true  → la cita ya no admite acciones (cancelar/reprogramar).
+  // Estados reales confirmados con backend (2026-08-07):
+  //   bookings.estado (texto libre): reservo | pagado | cancelado | asistio | no_asistio
+  //   estado_asignacion (CHECK):     pool | claimed | release_window | confirmed | cancelled
+  //   Cierre canónico del servicio: servicio_terminado_at (timestamp), NO un string de estado.
+  // 'pagado' no es un estado de la cita sino del cobro: no cambia el badge, la cita
+  // sigue mostrando Reservada/Confirmada según su asignación.
   function _estadoCita(b) {
     var est  = String(b.estado || '').trim().toLowerCase();
     var asig = String(b.estado_asignacion || '').trim().toLowerCase();
     var claimed = Number(b.slots_claimed || 0);
     var totalSlots = Number(b.slots_total || 0);
+    var terminado = b.servicio_terminado_at || b.checkout_terapeuta_at;
     var dt = b.fecha_agendada ? parseLocalDate(b.fecha_agendada) : null;
     var yaPaso = !!(dt && dt.getTime() < Date.now() - 86400000);
 
-    if (est === 'cancelado' || b.cancelado_at) {
+    if (est === 'cancelado' || asig === 'cancelled' || b.cancelado_at) {
       return { label: 'Cancelada', cls: 'ex-st-cancel', inactive: true };
     }
     if (est === 'no_asistio' || est === 'no_asistió') {
       return { label: 'No asistida', cls: 'ex-st-noshow', inactive: true };
     }
-    if (est === 'finalizado' || est === 'finalizada' || est === 'completado' || est === 'completada' || b.checkout_terapeuta_at) {
+    if (est === 'asistio' || est === 'asistió' || terminado) {
       return { label: 'Finalizada', cls: 'ex-st-done', inactive: true };
     }
     if (yaPaso) {
       return { label: 'Finalizada', cls: 'ex-st-done', inactive: true };
     }
     // Futuras / de hoy: el detalle viene de la asignación de terapeuta
-    if (asig === 'claimed' || asig === 'confirmed' || (totalSlots > 0 && claimed >= totalSlots)) {
+    if (asig === 'confirmed' || asig === 'claimed' || (totalSlots > 0 && claimed >= totalSlots)) {
       return { label: 'Confirmada', cls: 'ex-st-ok', inactive: false };
+    }
+    if (asig === 'release_window') {
+      return { label: 'Reservada', cls: 'ex-st-pending', inactive: false,
+               hint: 'Estamos reasignando a tu terapeuta.' };
     }
     if (totalSlots > 0 && claimed > 0) {
       return { label: 'Confirmación parcial', cls: 'ex-st-partial', inactive: false,
@@ -18421,7 +18434,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v239-estados-cita-cliente', stamp: '2026-08-07 14:00' };
+  var EX_BUILD = { version: 'v240-estados-reales-backend', stamp: '2026-08-07 14:40' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
