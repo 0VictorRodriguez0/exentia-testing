@@ -15868,13 +15868,19 @@ try {
 
   // Normaliza el shape de un booking devuelto por me-v2 para que los renderers
   // legacy (_citaCard, _splitBookings, dropdown) sigan funcionando sin cambios.
-  // me-v2 usa booking_id/tipo_cita/total_mxn; el código viejo usaba id/modalidad/valor_ticket_mxn.
+  // Shape real me-v2: booking_id / code / fecha / hora / modalidad / precio_total / total_mxn / zona.
   function _normalizeMeBooking(b) {
     if (!b || typeof b !== 'object') return b;
     return Object.assign({}, b, {
       id: b.booking_id || b.id,
-      modalidad: b.tipo_cita || b.modalidad,
-      valor_ticket_mxn: b.total_mxn != null ? b.total_mxn : (b.precio_total != null ? b.precio_total : b.valor_ticket_mxn)
+      booking_code: b.code || b.booking_code,
+      fecha_agendada: b.fecha || b.fecha_agendada,
+      hora_agendada: b.hora || b.hora_agendada,
+      modalidad: b.modalidad,
+      valor_ticket_mxn: b.total_mxn != null ? b.total_mxn : (b.precio_total != null ? b.precio_total : b.valor_ticket_mxn),
+      precio_total_mxn: b.precio_total != null ? b.precio_total : b.precio_total_mxn,
+      zona_colonia: b.zona || b.zona_colonia,
+      terapeuta_asignada: b.terapeuta_nombre || b.terapeuta_asignada
     });
   }
 
@@ -18329,7 +18335,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v236-prefs-editables', stamp: '2026-08-07 11:30' };
+  var EX_BUILD = { version: 'v237-fix-normalize-me-shape', stamp: '2026-08-07 12:15' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
