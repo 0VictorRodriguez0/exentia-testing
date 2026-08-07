@@ -6559,6 +6559,11 @@ window.EXENTIA_CONFIG = {
   WEBHOOK_RESERVA: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-reserva',
   WEBHOOK_TRACK: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-track',
   WEBHOOK_UPDATE_PHONE: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-update-phone',
+  WEBHOOK_UPDATE_NAME: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-cliente-update-name',
+  WEBHOOK_UPDATE_EMAIL: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-cliente-update-email',
+  WEBHOOK_UPDATE_PREFS: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-cliente-update-prefs',
+  WEBHOOK_CLIENTE_ME_V2: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-cliente-me-v2',
+  WEBHOOK_CANCELAR_CLIENTE: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-cancelar-cliente',
   WEBHOOK_STRIPE_CHECKOUT: 'https://n8n-ntcue-clone-u59578.vm.elestio.app/webhook/exentia-stripe-checkout',
   // ⚠ PRODUCCIÓN — cobros REALES. Tarjeta 4242 NO funciona aquí; cualquier tarjeta
   // que se capture cobra de verdad. Para volver a pruebas: cambiar esta pk_ por la
@@ -15706,11 +15711,15 @@ try {
     var sess = getClienteSession();
     if (!sess) return;
     try {
-      // Usar el triple-matching para encontrar bookings vinculados al cliente
-      // (incluso si fueron creados antes de tener cuenta).
-      var allBookings = (typeof fetchClienteBookings === 'function')
-        ? await fetchClienteBookings(sess)
-        : [];
+      // Fuente única: me-v2 (GHL + Supabase en vivo). Sin cache localStorage.
+      var me = (typeof fetchClienteMe === 'function') ? await fetchClienteMe() : null;
+      if (me && !me.unauthorized) {
+        _cuentaState.profile = me.profile;
+        _cuentaState.bookings = me.bookings;
+        _cuentaState.contactId = me.contactId;
+        _cuentaState.lastLoad = Date.now();
+      }
+      var allBookings = (me && me.bookings) ? me.bookings : [];
       var now = Date.now();
       var rows = allBookings.filter(function(b){
         var dt = b && b.fecha_agendada ? parseLocalDate(b.fecha_agendada) : null;
@@ -15804,14 +15813,42 @@ try {
   // ═══════════════════════════════════════════════════════════════════
   // MODAL MI CUENTA (sidebar + tabs)
   // ═══════════════════════════════════════════════════════════════════
+  // Refresca me-v2 en Mi Cuenta y re-renderiza el tab actual. Cache en memoria
+  // 30 s: dentro de esa ventana reusa lo que hay; fuera, refetchea.
+  async function _refreshCuentaFromMe(opts) {
+    opts = opts || {};
+    var force = !!opts.force;
+    var main = document.getElementById('ex-cuenta-main');
+    var isStale = !_cuentaState.lastLoad || (Date.now() - _cuentaState.lastLoad) > 30000;
+    if (force || isStale || !_cuentaState.profile) {
+      if (main) main.innerHTML = '<div class="ex-cuenta-loading">Cargando…</div>';
+      var me = await fetchClienteMe();
+      if (!me) {
+        if (main) main.innerHTML = '<div class="ex-cuenta-empty">No pudimos cargar tus datos. <button type="button" onclick="_refreshCuentaFromMe({force:true})">Reintentar</button></div>';
+        return false;
+      }
+      if (me.unauthorized) {
+        closeModal('modal-cuenta');
+        if (typeof openAuthModal === 'function') openAuthModal();
+        return false;
+      }
+      _cuentaState.profile = me.profile;
+      _cuentaState.bookings = me.bookings;
+      _cuentaState.contactId = me.contactId;
+      _cuentaState.lastLoad = Date.now();
+    }
+    renderCuentaTab();
+    return true;
+  }
+  window._refreshCuentaFromMe = _refreshCuentaFromMe;
+
   async function openCuentaModal(tab) {
     var sess = getClienteSession();
     if (!sess) { openAuthModal(); return; }
     _cuentaState.tab = tab || 'inicio';
-    _cuentaState.profile = sess;
     closeUserDropdown();
     openModal('modal-cuenta');
-    // Activar tab en sidebar
+    // Activar tab en sidebar + wiring de click con refetch
     document.querySelectorAll('.ex-cuenta-side-item').forEach(function(el){
       el.classList.toggle('active', el.getAttribute('data-cuenta-tab') === _cuentaState.tab);
       if (!el._wired && el.getAttribute('data-cuenta-tab')) {
@@ -15821,50 +15858,60 @@ try {
           document.querySelectorAll('.ex-cuenta-side-item').forEach(function(s){
             s.classList.toggle('active', s.getAttribute('data-cuenta-tab') === _cuentaState.tab);
           });
-          renderCuentaTab();
+          _refreshCuentaFromMe();
         });
       }
     });
-    // Cargar bookings desde Supabase (una vez por apertura).
-    // Triple matching: ghl_contact_id (preciso) → email del JWT → teléfono del JWT.
-    // Esto cubre reservas viejas hechas antes de tener cuenta o con email distinto.
-    if (!_cuentaState.bookings.length || _cuentaState.lastLoad < Date.now() - 60000) {
-      var main = document.getElementById('ex-cuenta-main');
-      main.innerHTML = '<div class="ex-cuenta-loading">Cargando…</div>';
-      _cuentaState.bookings = await fetchClienteBookings(sess);
-      _cuentaState.lastLoad = Date.now();
-    }
-    renderCuentaTab();
+    // Siempre refetch al abrir (force) — regla del backend: reflejar cambios hechos en panel admin.
+    await _refreshCuentaFromMe({ force: true });
   }
 
-  async function fetchClienteBookings(sess) {
-    var headers = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY };
-    var seen = {};
-    var all = [];
-    async function fetchOr(filter) {
-      try {
-        var url = SUPA_URL + '/rest/v1/exentia_bookings_dash?' + filter + '&order=fecha_agendada.desc.nullslast&limit=30';
-        var res = await fetch(url, { headers: headers });
-        var rows = await res.json();
-        if (Array.isArray(rows)) {
-          rows.forEach(function(b){
-            if (b && b.id && !seen[b.id]) { seen[b.id] = true; all.push(b); }
-          });
-        }
-      } catch(e) {}
-    }
-    // 1) Por contactId del JWT (más confiable)
-    if (sess.contactId) await fetchOr('ghl_contact_id=eq.' + encodeURIComponent(sess.contactId));
-    // 2) Por email del JWT (legado: bookings antes de tener tag o sin contactId vinculado)
-    if (sess.email) await fetchOr('cliente_email=eq.' + encodeURIComponent((sess.email || '').toLowerCase()));
-    // 3) Por teléfono normalizado (sin '+', solo dígitos) — algunos bookings legacy tienen el teléfono pero no el email
-    if (sess.phone) {
-      var phoneDigits = String(sess.phone).replace(/\D/g, '');
-      if (phoneDigits.length >= 10) await fetchOr('cliente_telefono=eq.' + phoneDigits);
-    }
-    return all;
+  // Normaliza el shape de un booking devuelto por me-v2 para que los renderers
+  // legacy (_citaCard, _splitBookings, dropdown) sigan funcionando sin cambios.
+  // me-v2 usa booking_id/tipo_cita/total_mxn; el código viejo usaba id/modalidad/valor_ticket_mxn.
+  function _normalizeMeBooking(b) {
+    if (!b || typeof b !== 'object') return b;
+    return Object.assign({}, b, {
+      id: b.booking_id || b.id,
+      modalidad: b.tipo_cita || b.modalidad,
+      valor_ticket_mxn: b.total_mxn != null ? b.total_mxn : (b.precio_total != null ? b.precio_total : b.valor_ticket_mxn)
+    });
   }
-  window.fetchClienteBookings = fetchClienteBookings;
+
+  // Endpoint UNO: trae {cliente, citas:{proximas, historial}} en vivo desde GHL + Supabase.
+  // Sin cache localStorage (regla del backend). Cache en memoria mínimo (30 s) para no
+  // golpear al saltar entre tabs muy rápido.
+  async function fetchClienteMe() {
+    var jwt = null;
+    try { jwt = localStorage.getItem(CLIENTE_AUTH.JWT_KEY); } catch(_){}
+    if (!jwt) return null;
+    try {
+      var res = await fetch(window.EXENTIA_CONFIG.WEBHOOK_CLIENTE_ME_V2, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        body: '{}'
+      });
+      if (res.status === 401) {
+        try { localStorage.removeItem(CLIENTE_AUTH.JWT_KEY); } catch(_){}
+        try { refreshUserBtnState(); } catch(_){}
+        return { unauthorized: true };
+      }
+      if (!res.ok) return null;
+      var data = await res.json().catch(function(){ return null; });
+      if (!data || data.ok === false) return null;
+      var prox = ((data.citas && data.citas.proximas) || []).map(_normalizeMeBooking);
+      var hist = ((data.citas && data.citas.historial) || []).map(_normalizeMeBooking);
+      return {
+        profile: data.cliente || {},
+        contactId: data.contactId || null,
+        bookings: prox.concat(hist)
+      };
+    } catch(e) {
+      try { console.warn('[ex-me-v2] fetch falló', e); } catch(_){}
+      return null;
+    }
+  }
+  window.fetchClienteMe = fetchClienteMe;
   window.openCuentaModal = openCuentaModal;
 
   function renderCuentaTab() {
@@ -15939,7 +15986,8 @@ try {
     var sp = _splitBookings();
     var prof = _cuentaState.profile || {};
     var total = _cuentaState.bookings.length;
-    var html = '<h2 class="ex-cuenta-h">Hola, <em>' + (prof.firstName || 'Cliente') + '</em></h2>';
+    var nombre = prof.nombre || prof.firstName || 'Cliente';
+    var html = '<h2 class="ex-cuenta-h">Hola, <em>' + nombre + '</em></h2>';
     html += '<p class="ex-cuenta-sub">Tienes ' + total + ' reserva' + (total === 1 ? '' : 's') + ' con Exentia.</p>';
     if (sp.upcoming.length > 0) {
       html += '<div class="ex-cuenta-block"><div class="ex-cuenta-block-h">TU PRÓXIMA CITA</div>' + _citaCard(sp.upcoming[0], 'card') + '</div>';
@@ -15985,12 +16033,25 @@ try {
     }
     main.innerHTML = html;
   }
+  // Mapea el valor GHL (capitalizado en español, "Media"/"Aromas suaves"/"Sin preferencia")
+  // al slug que usan los chips de la UI ("media"/"suaves"/"cualquiera"). Retorno inverso en Fase 3.
+  var _PREF_VALUE_TO_SLUG = {
+    presion: { 'Suave': 'suave', 'Media': 'media', 'Fuerte': 'fuerte' },
+    aromas:  { 'Sin aromas': 'sin', 'Aromas suaves': 'suaves', 'Cualquier aroma': 'cualquiera' },
+    genero:  { 'Mujer': 'mujer', 'Hombre': 'hombre', 'Sin preferencia': 'cualquiera' }
+  };
+  function _prefValueToSlug(kind, val) {
+    if (!val) return '';
+    return (_PREF_VALUE_TO_SLUG[kind] && _PREF_VALUE_TO_SLUG[kind][val]) || String(val).toLowerCase();
+  }
+
   function renderTabPreferencias() {
     var main = document.getElementById('ex-cuenta-main');
-    var sess = _cuentaState.profile || {};
-    var pres = sess.pref_presion || '';
-    var aro = sess.pref_aromas || '';
-    var gen = sess.preferencia_sexo || sess.pref_genero || '';
+    var prof = _cuentaState.profile || {};
+    var prefs = prof.preferencias || {};
+    var pres = _prefValueToSlug('presion', prefs.presion);
+    var aro = _prefValueToSlug('aromas', prefs.aromas);
+    var gen = _prefValueToSlug('genero', prefs.genero);
     var html = '<h2 class="ex-cuenta-h">Mis <em>preferencias</em></h2><p class="ex-cuenta-sub">Las preferencias que selecciones serán consideradas por tu terapeuta antes de tu cita.</p>';
     html += '<div class="ex-cuenta-block">';
     html += '<div class="ex-cuenta-pref-label">PRESIÓN PREFERIDA</div><div class="ex-cuenta-pref-grid">';
@@ -16014,12 +16075,16 @@ try {
   }
   function renderTabDatos() {
     var main = document.getElementById('ex-cuenta-main');
-    var sess = _cuentaState.profile || {};
+    var prof = _cuentaState.profile || {};
+    var nombre = prof.nombre || prof.firstName || '';
+    var apellido = prof.apellido || prof.lastName || '';
+    var email = prof.email || '—';
+    var tel = prof.telefono || prof.phone || '—';
     var html = '<h2 class="ex-cuenta-h">Mis <em>datos</em></h2><p class="ex-cuenta-sub">Información que usamos para confirmar tu cita.</p>';
     html += '<div class="ex-cuenta-block">';
-    html += '<div class="ex-cuenta-datos-row"><label>Nombre</label><span>' + (sess.firstName||'') + ' ' + (sess.lastName||'') + '</span></div>';
-    html += '<div class="ex-cuenta-datos-row"><label>Correo electrónico</label><span>' + (sess.email||'—') + '</span></div>';
-    html += '<div class="ex-cuenta-datos-row"><label>WhatsApp</label><span>' + (sess.phone||'—') + '</span></div>';
+    html += '<div class="ex-cuenta-datos-row"><label>Nombre</label><span>' + nombre + ' ' + apellido + '</span></div>';
+    html += '<div class="ex-cuenta-datos-row"><label>Correo electrónico</label><span>' + email + '</span></div>';
+    html += '<div class="ex-cuenta-datos-row"><label>WhatsApp</label><span>' + tel + '</span></div>';
     html += '</div>';
     html += '<p class="ex-cuenta-sub" style="font-style:italic;">Para cambiar tus datos, contacta a nuestro equipo. <a onclick="window.open(\'https://wa.me/' + YAZ_WHATSAPP + '?text=Hola%2C+quiero+actualizar+mis+datos.\', \'_blank\')" style="color:var(--brown); text-decoration:underline; cursor:pointer;">Abrir WhatsApp →</a></p>';
     main.innerHTML = html;
@@ -18200,7 +18265,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v234-fix-fecha-parseLocalDate', stamp: '2026-08-07 10:30' };
+  var EX_BUILD = { version: 'v235-mi-cuenta-me-v2', stamp: '2026-08-07 11:00' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
