@@ -15904,6 +15904,9 @@ try {
       }
       if (!res.ok) return null;
       var data = await res.json().catch(function(){ return null; });
+      // n8n "Respond to Webhook" devuelve los items como ARRAY: [{ok, cliente, citas, ...}].
+      // Desenvolver el primer elemento; tolerar también el shape objeto directo.
+      if (Array.isArray(data)) data = data[0] || null;
       if (!data || data.ok === false) return null;
       var prox = ((data.citas && data.citas.proximas) || []).map(_normalizeMeBooking);
       var hist = ((data.citas && data.citas.historial) || []).map(_normalizeMeBooking);
@@ -16039,16 +16042,26 @@ try {
     }
     main.innerHTML = html;
   }
-  // Mapea el valor GHL (capitalizado en español, "Media"/"Aromas suaves"/"Sin preferencia")
-  // al slug que usan los chips de la UI ("media"/"suaves"/"cualquiera"). Retorno inverso en Fase 3.
+  // Mapea el valor que vive en GHL al slug de los chips. Los contactos tienen datos
+  // mixtos: algunos escritos por el flujo viejo en minúscula ("suave"/"suaves"/"mujer"),
+  // otros por update-prefs en capitalizado ("Suave"/"Aromas suaves"/"Sin preferencia").
+  // Las claves están en lowercase y la búsqueda normaliza, así ambos formatos leen bien.
   var _PREF_VALUE_TO_SLUG = {
-    presion: { 'Suave': 'suave', 'Media': 'media', 'Fuerte': 'fuerte' },
-    aromas:  { 'Sin aromas': 'sin', 'Aromas suaves': 'suaves', 'Cualquier aroma': 'cualquiera' },
-    genero:  { 'Mujer': 'mujer', 'Hombre': 'hombre', 'Sin preferencia': 'cualquiera' }
+    presion: { 'suave': 'suave', 'media': 'media', 'fuerte': 'fuerte' },
+    aromas:  {
+      'sin aromas': 'sin', 'sin': 'sin',
+      'aromas suaves': 'suaves', 'suaves': 'suaves',
+      'cualquier aroma': 'cualquiera', 'cualquiera': 'cualquiera'
+    },
+    genero:  {
+      'mujer': 'mujer', 'hombre': 'hombre',
+      'sin preferencia': 'cualquiera', 'cualquiera': 'cualquiera', 'indistinto': 'cualquiera'
+    }
   };
   function _prefValueToSlug(kind, val) {
     if (!val) return '';
-    return (_PREF_VALUE_TO_SLUG[kind] && _PREF_VALUE_TO_SLUG[kind][val]) || String(val).toLowerCase();
+    var key = String(val).trim().toLowerCase();
+    return (_PREF_VALUE_TO_SLUG[kind] && _PREF_VALUE_TO_SLUG[kind][key]) || key;
   }
   // Inverso: slug del chip -> valor exacto que el backend espera en GHL.
   var _PREF_SLUG_TO_VALUE = {
@@ -18335,7 +18348,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v237-fix-normalize-me-shape', stamp: '2026-08-07 12:15' };
+  var EX_BUILD = { version: 'v238-fix-me-array-unwrap', stamp: '2026-08-07 13:00' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
