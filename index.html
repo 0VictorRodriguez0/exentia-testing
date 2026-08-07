@@ -15759,7 +15759,7 @@ try {
             wrap.querySelector('.ex-userdrop-tag').textContent = 'PENDIENTE DE CONFIRMAR HORA';
             document.getElementById('ex-userdrop-cita-when').textContent = 'Falta confirmar día y hora';
             var what = svcSummary(b.servicios);
-            document.getElementById('ex-userdrop-cita-what').textContent = (what || 'Servicio') + ' · ' + (b.booking_code || '') + ' · ' + (b.modalidad === 'domicilio' ? 'Domicilio' : 'Sucursal');
+            document.getElementById('ex-userdrop-cita-what').textContent = (what || 'Servicio') + ' · ' + (b.booking_code || '') + ' · ' + (_esDomicilio(b) ? 'Domicilio' : 'Sucursal');
           }
           if (none) none.style.display = 'none';
           window._ultimaProxCita = b;
@@ -15775,7 +15775,7 @@ try {
           document.getElementById('ex-userdrop-cita-when').textContent = fmtFecha(b.fecha_agendada, b.hora_agendada);
           var what = svcSummary(b.servicios);
           var ter = b.terapeuta_asignada ? ' · ' + b.terapeuta_asignada : '';
-          document.getElementById('ex-userdrop-cita-what').textContent = (what || 'Servicio') + ' · ' + (b.modalidad === 'domicilio' ? 'Domicilio' : 'Sucursal') + ter;
+          document.getElementById('ex-userdrop-cita-what').textContent = (what || 'Servicio') + ' · ' + (_esDomicilio(b) ? 'Domicilio' : 'Sucursal') + ter;
         }
         if (none) none.style.display = 'none';
         window._ultimaProxCita = b;
@@ -16002,6 +16002,23 @@ try {
   }
   window._estadoCita = _estadoCita;
 
+  // Lugar de la cita (Sucursal vs Domicilio). OJO: `bookings.modalidad` guarda el MODO
+  // (individual | pareja | grupo), NO el lugar. El lugar canónico es `tipo_cita`, que
+  // hoy no está expuesto en la vista exentia_bookings_dash — por eso el fallback por
+  // dirección/zona, que es como se derivaba antes de que existiera la columna.
+  function _lugarCita(b) {
+    var tipo = String(b.tipo_cita || '').trim().toLowerCase();
+    if (tipo === 'domicilio') return 'Exentia At Home';
+    if (tipo === 'sucursal') return 'Sucursal Plaza Hive';
+    var mod = String(b.modalidad || '').trim().toLowerCase();
+    if (mod === 'domicilio') return 'Exentia At Home';
+    if (mod === 'sucursal') return 'Sucursal Plaza Hive';
+    if (b.direccion_libre || b.direccion_maps_url || b.zona_colonia) return 'Exentia At Home';
+    return 'Sucursal Plaza Hive';
+  }
+  function _esDomicilio(b) { return _lugarCita(b) === 'Exentia At Home'; }
+  window._lugarCita = _lugarCita;
+
   function _splitBookings() {
     var now = Date.now();
     var up = [], hi = [], pe = [];
@@ -16032,7 +16049,7 @@ try {
     var dia = dt ? fmtDay(dt.getDay()) : '';
     var what = svcSummary(b.servicios) || 'Servicio Exentia';
     var ter = b.terapeuta_asignada ? '<div class="therapist">Con <b>' + b.terapeuta_asignada + '</b></div>' : '';
-    var modalidad = b.modalidad === 'domicilio' ? 'Exentia At Home' : 'Sucursal Plaza Hive';
+    var modalidad = _lugarCita(b);
     if (kind === 'pending') {
       var code = b.booking_code ? ' · <code style="font-size:11px;color:#9a8672;">' + b.booking_code + '</code>' : '';
       return '<div class="ex-cuenta-cita-card" style="background:#fff;border:1px dashed #d4d0ab;">'
@@ -16040,7 +16057,7 @@ try {
         + '<div class="ex-cuenta-cita-info">'
         +   '<h4>' + what + '</h4>'
         +   '<div class="when" style="color:#a04a3c;font-weight:500;">Falta confirmar día y hora' + code + '</div>'
-        +   '<div class="therapist">Se reservó en ' + (b.modalidad === 'domicilio' ? 'domicilio' : 'sucursal') + '. Contáctanos por WhatsApp para asignar fecha.</div>'
+        +   '<div class="therapist">Se reservó en ' + (_esDomicilio(b) ? 'domicilio' : 'sucursal') + '. Contáctanos por WhatsApp para asignar fecha.</div>'
         + '</div>'
         + '<div class="ex-cuenta-cita-acts">'
         +   '<a onclick="window.open(\'https://wa.me/' + YAZ_WHATSAPP + '?text=' + encodeURIComponent('Hola, quiero confirmar mi cita ' + (b.booking_code || '')) + '\', \'_blank\')">Confirmar por WhatsApp</a>'
@@ -18434,7 +18451,7 @@ try {
   //     TZ=America/Cancun date '+%Y-%m-%d %H:%M'
   // Si se pone una hora inventada más adelante que el reloj del navegador,
   // el badge no puede calcular la antigüedad y pierde su utilidad.
-  var EX_BUILD = { version: 'v240-estados-reales-backend', stamp: '2026-08-07 14:40' };
+  var EX_BUILD = { version: 'v241-fix-lugar-vs-modalidad', stamp: '2026-08-07 15:05' };
   // Si ?debug=1 en la URL, muestra el badge también en mobile (CSS lo oculta por default)
   try { if (new URLSearchParams(window.location.search).get('debug') === '1') document.documentElement.setAttribute('data-debug','1'); } catch(_){}
   var el = document.getElementById('ex-build-badge');
